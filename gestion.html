@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="gestion.css">
+    <title>Underground</title>
+    <link rel="icon" href="logo.png" type="image/png">
+    <style>
+        /* Styles pour l'icône de recherche */
+        .search-container {
+            display: flex;
+            align-items: center; /* Alignement vertical des éléments */
+            justify-content: space-between; /* Espace entre les éléments */
+            margin-bottom: 10px;
+        }
+
+        .search-container input[type="text"] {
+            padding: 8px;
+            border-radius: 15px;
+            border: 1px solid #ccc;
+            margin-right: 5px;
+            width: 200px; /* Largeur du champ de recherche */
+        }
+
+        .search-container .search-input {
+            display: flex;
+            align-items: center; /* Alignement vertical des éléments */
+        }
+
+        .search-container button {
+            padding: 8px 12px;
+            border-radius: 5px;
+            background-color: #0858a1;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 20px;
+        }
+
+        .search-container button:hover {
+            background-color: #0858a1;
+        }
+
+        .content h2 {
+            display: flex;
+            align-items: center;
+            justify-content: space-between; /* Espace entre l'icône et le texte */
+        }
+
+        .content h2 img {
+            margin-right: 10px; /* Espacement entre l'icône et le texte */
+            width: 20px; /* Taille de l'icône */
+            height: 20px;
+        }
+    </style>
+</head>
+<body>
+   
+
+    <div class="container">
+        <div class="sidebar">
+            <div class="logo">
+                <img src="logo1.png" alt="Logo">
+            </div>
+        </div>
+
+        <div class="content">
+            <a href="https://docs.google.com/spreadsheets/d/YOUR_SPREADSHEET_ID/edit#gid=0" target="_blank">Voir dans Google Sheets</a>
+            <h2>Liste des abonnements
+                <div class="search-container">
+                    <div class="search-input">
+                        <input type="text" id="searchInput" placeholder="Rechercher par CIN ou par nom...">
+                    </div>
+                    <button onclick="search()">Rechercher</button>
+                </div>
+            </h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>CIN</th>
+                        <th>Nom</th>
+                        <th>Prénom</th>
+                        <th>Téléphone</th>
+                        <th>Abonnement</th>
+                        <th>Prix</th>
+                        <th>Date d'abonnement</th>
+                        <th>Actions</th>
+                        <th>Payé</th> <!-- Nouvelle colonne pour le bouton Payé -->
+                    </tr>
+                </thead>
+                <tbody id="abonnementsBody">
+                    <!-- Les données seront ajoutées ici dynamiquement par JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="form-container" id="editFormContainer">
+        <h2>Modifier l'abonnement</h2>
+        <form id="editForm">
+            <input type="hidden" id="editId" name="id">
+            <div class="form-group">
+                <label for="editCin">Numéro CIN:</label>
+                <input type="text" id="editCin" name="cin" required>
+            </div>
+            <div class="form-group">
+                <label for="editNom">Nom:</label>
+                <input type="text" id="editNom" name="nom" required>
+            </div>
+            <div class="form-group">
+                <label for="editPrenom">Prénom:</label>
+                <input type="text" id="editPrenom" name="prenom" required>
+            </div>
+            <div class="form-group">
+                <label for="editTelephone">Numéro de téléphone:</label>
+                <input type="tel" id="editTelephone" name="telephone" required>
+            </div>
+            <div class="form-group">
+                <label for="editAbonnement">Type d'abonnement:</label>
+                <select id="editAbonnement" name="abonnement" required>
+                    <option value="1mois">1 mois</option>
+                    <option value="3mois">3 mois</option>
+                    <option value="6mois">6 mois</option>
+                    <option value="12mois">12 mois</option>
+                    <option value="autre">Autre</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="editPrix">Prix:</label>
+                <input type="number" id="editPrix" name="prix" required>
+            </div>
+            <button type="submit" class="save-button">Enregistrer les modifications</button>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchAndDisplayData();
+        });
+
+        function fetchAndDisplayData() {
+            fetch('fetch_data.php')
+            .then(response => response.text())
+            .then(data => {
+                const tbody = document.getElementById('abonnementsBody');
+                tbody.innerHTML = '';
+
+                if (data.trim() !== '') {
+                    const rows = data.trim().split("\n");
+                    rows.forEach(row => {
+                        const columns = row.split(",");
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${columns[0]}</td>
+                            <td>${columns[1]}</td>
+                            <td>${columns[2]}</td>
+                            <td>${columns[3]}</td>
+                            <td>${columns[4]}</td>
+                            <td>${columns[5]}</td>
+                            <td>${columns[6]}</td>
+                            <td>
+                                <button class="edit-button" onclick="editRow(${columns[7]}, '${columns[0]}', '${columns[1]}', '${columns[2]}', '${columns[3]}', '${columns[4]}', '${columns[5]}', '${columns[6]}')">Modifier</button>
+                                <button onclick="deleteRow(${columns[7]})">Supprimer</button>
+                            </td>
+                            <td>
+                                <button class="payment-button" id="paymentButton_${columns[7]}" data-subscription-date="${columns[6]}" data-subscription-duration="${columns[4]}">Payé</button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                    setupPaymentButtons();
+                } else {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td colspan="9">Aucune donnée disponible</td>`;
+                    tbody.appendChild(tr);
+                }
+            })
+            .catch(error => console.error('Erreur:', error));
+        }
+
+        function setupPaymentButtons() {
+            const now = new Date().getTime(); // Date actuelle en millisecondes
+
+            // Sélectionnez tous les boutons "Payé" par leur classe
+            const paymentButtons = document.querySelectorAll('.payment-button');
+
+            paymentButtons.forEach(button => {
+                const subscriptionDate = new Date(button.dataset.subscriptionDate).getTime(); // Date d'abonnement en millisecondes
+                const duration = parseInt(button.dataset.subscriptionDuration); // Durée d'abonnement en mois
+
+                // Calculer la date d'expiration basée sur la durée d'abonnement
+                const expirationDate = new Date(subscriptionDate);
+                expirationDate.setMonth(expirationDate.getMonth() + duration);
+
+                // Calculer la différence en jours entre la date d'expiration et la date actuelle
+                const differenceInDays = Math.ceil((expirationDate.getTime() - now) / (1000 * 3600 * 24));
+
+                // Mettre à jour la classe du bouton en fonction de la différence en jours
+                if (differenceInDays <= 0) {
+                    button.classList.add('expired'); // Classe CSS pour le bouton en rouge
+                } else {
+                    button.classList.remove('expired');
+                }
+            });
+        }
+
+        document.getElementById('editForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const formData = new FormData(this);
+
+            fetch('update.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    fetchAndDisplayData();
+                    document.getElementById('editFormContainer').style.display = 'none';
+                } else {
+                    alert('Erreur lors de la mise à jour de l\'abonnement.');
+                }
+            })
+            .catch(error => console.error('Erreur:', error));
+        });
+
+        function editRow(id, cin, nom, prenom, telephone, abonnement, prix, created_at) {
+            document.getElementById('editId').value = id;
+            document.getElementById('editCin').value = cin;
+            document.getElementById('editNom').value = nom;
+            document.getElementById('editPrenom').value = prenom;
+            document.getElementById('editTelephone').value = telephone;
+            document.getElementById('editAbonnement').value = abonnement;
+            document.getElementById('editPrix').value = prix;
+
+            document.getElementById('editFormContainer').style.display = 'block';
+        }
+
+        function deleteRow(id) {
+            if (confirm('Voulez-vous vraiment supprimer cet abonnement ?')) {
+                fetch(`delete.php?id=${id}`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        fetchAndDisplayData();
+                    } else {
+                        alert('Erreur lors de la suppression de l\'abonnement.');
+                    }
+                })
+                .catch(error => console.error('Erreur:', error));
+            }
+        }
+
+        function search() {
+            const searchValue = document.getElementById('searchInput').value.trim().toLowerCase();
+            const rows = document.querySelectorAll('#abonnementsBody tr');
+
+            rows.forEach(row => {
+                const cin = row.querySelector('td:nth-child(1)').textContent.trim().toLowerCase();
+                const nom = row.querySelector('td:nth-child(2)').textContent.trim().toLowerCase();
+
+                if (cin.includes(searchValue) || nom.includes(searchValue)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
